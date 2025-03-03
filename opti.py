@@ -29,5 +29,3 @@ class Opt:
         self.nonlinear_constraint_name.append(name)
         self.nonlinear_constraint_size.append(size)
         
-    def setmatrix(self,matrix):
-        self.matrix=matrix
