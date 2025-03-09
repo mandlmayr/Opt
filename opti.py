@@ -18,6 +18,7 @@ class Opt:
         self.nonlinear_constraint_size=[]
         
         self.matrix_blocks=[]
+        self.lin_bound_blocks=[]
         
 
     def addVar(self, name, size):
@@ -101,12 +102,35 @@ class Opt:
             self.matrix[cStart:cEnd, vStart:vEnd]=mat
             
         
-    
-        
+    def setLinBound(self, constr_name, lower, upper):
+        if constr_name not in self.linear_constraint_name:
+            raise Exception("Constraint does not exist!!!")
             
+        indC=self.linear_constraint_name.index(constr_name)
+        size=self.linear_constraint_size[indC]
+        if len(lower)!=size:
+            raise Exception("Lower dimension not correct!!!")
+            
+        if len(upper)!=size:
+            raise Exception("Upper dimension not correct!!!")
+            
+        self.lin_bound_blocks.append([constr_name,lower,upper])
         
+    def createLinBounds(self):
+        self.lin_upper=np.zeros(self.ind_linear_constraint[-1])
+        self.lin_lower=np.zeros(self.ind_linear_constraint[-1])
         
-        
+        for block in self.lin_bound_blocks:
+            constr_name=block[0]
+            lower=block[1]
+            upper=block[2]
+            
+            cStart, cEnd = self.indexLinConstr(constr_name)
+            
+            self.lin_lower[cStart:cEnd]=lower
+            self.lin_upper[cStart:cEnd]=upper
+            
+            
         
 p1=Opt()
 p1.addVar("x1", 10)
@@ -119,3 +143,6 @@ B=np.ones((15,15))
 p1.setSubMatrix("x1", "bilanz1", A)
 p1.setSubMatrix("x2", "bilanz2", B)
 p1.createMatrixDense()
+
+p1.setLinBound("bilanz1", np.ones(20), np.ones(20))
+p1.createLinBounds()
