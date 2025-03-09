@@ -17,6 +17,8 @@ class Opt:
         self.nonlinear_constraint_name=[]
         self.nonlinear_constraint_size=[]
         
+        self.matrix_blocks=[]
+        
 
     def addVar(self, name, size):
         self.variable_name.append(name)
@@ -61,8 +63,46 @@ class Opt:
     def indexNonlinConstr(self, constr_name):
         ind=self.nonlinear_constraint_name.index(constr_name)
         return self.ind_nonlinear_constraint[ind], self.ind_nonlinear_constraint[ind+1]
-        
+    
+    def setSubMatrix(self, var_name, constr_name, matrix):
+        if var_name not in self.variable_name:
+            raise Exception("Variable does not exist!!!")
+        if constr_name not in self.linear_constraint_name:
+            raise Exception("Constraint does not exist!!!")
             
+        indV=self.variable_name.index(var_name)
+        indC=self.linear_constraint_name.index(constr_name)
+        
+        sizeV=self.variable_size[indV]
+        sizeC=self.linear_constraint_size[indC]
+            
+        matC=matrix.shape[0]
+        matV=matrix.shape[1]
+        
+        if matV != sizeV :
+            raise Exception("Variable dimension is wrong!")
+            
+        if matC != sizeC :
+            raise Exception("Constraint dimension is wrong!")
+            
+        self.matrix_blocks.append([constr_name,var_name,matrix])
+        
+    def createMatrixDense(self):
+        self.matrix=np.zeros((self.ind_linear_constraint[-1],self.ind_var[-1]))
+        
+        for block in self.matrix_blocks:
+            constr_name=block[0]
+            var_name=block[1]
+            mat=block[2]
+            
+            cStart, cEnd = self.indexLinConstr(constr_name)
+            vStart, vEnd = self.indexVar(var_name)
+            
+            self.matrix[cStart:cEnd, vStart:vEnd]=mat
+            
+        
+    
+        
             
         
         
@@ -74,3 +114,8 @@ p1.addVar("x2",15)
 p1.addLinConstr("bilanz1", 20)
 p1.addLinConstr("bilanz2", 15)
 p1.setupIndices()
+A=np.ones((20,10))
+B=np.ones((15,15))
+p1.setSubMatrix("x1", "bilanz1", A)
+p1.setSubMatrix("x2", "bilanz2", B)
+p1.createMatrixDense()
