@@ -19,6 +19,7 @@ class Opt:
         
         self.matrix_blocks=[]
         self.lin_bound_blocks=[]
+        self.bound_blocks=[]
         
 
     def addVar(self, name, size):
@@ -130,6 +131,34 @@ class Opt:
             self.lin_lower[cStart:cEnd]=lower
             self.lin_upper[cStart:cEnd]=upper
             
+    def setBound(self, var_name, lower, upper):
+        if var_name not in self.variable_name:
+            raise Exception("Variable does not exist!!!")
+            
+        indV=self.variable_name.index(var_name)
+        size=self.variable_size[indV]
+        if len(lower)!=size:
+            raise Exception("Lower dimension not correct!!!")
+            
+        if len(upper)!=size:
+            raise Exception("Upper dimension not correct!!!")
+            
+        self.bound_blocks.append([var_name,lower,upper])        
+        
+    def CreateBounds(self):
+        self.upper=np.zeros(self.ind_var[-1])
+        self.lower=np.zeros(self.ind_var[-1])
+        
+        for block in self.bound_blocks:
+            var_name=block[0]
+            lower=block[1]
+            upper=block[2]
+            
+            vStart, vEnd = self.indexVar(var_name)
+            
+            self.lower[vStart:vEnd]=lower
+            self.upper[vStart:vEnd]=upper
+        
             
         
 p1=Opt()
@@ -144,5 +173,8 @@ p1.setSubMatrix("x1", "bilanz1", A)
 p1.setSubMatrix("x2", "bilanz2", B)
 p1.createMatrixDense()
 
+
 p1.setLinBound("bilanz1", np.ones(20), np.ones(20))
 p1.createLinBounds()
+p1.setBound("x1", np.ones(10), np.ones(10))
+p1.CreateBounds()
