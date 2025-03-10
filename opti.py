@@ -24,9 +24,7 @@ class Opt:
         self.func_block=[]
         self.func_needed=set()
         
-        self.nonlin_bound_blocks=[]
-        
-        
+        self.nonlin_bound_blocks=[]    
 
     def addVar(self, name, size):
         self.variable_name.append(name)
@@ -151,7 +149,7 @@ class Opt:
             
         self.bound_blocks.append([var_name,lower,upper])        
         
-    def CreateBounds(self):
+    def createBounds(self):
         self.upper=np.zeros(self.ind_var[-1])
         self.lower=np.zeros(self.ind_var[-1])
         
@@ -186,27 +184,77 @@ class Opt:
         if len(upper)!=size:
             raise Exception("Upper dimension not correct!!!")
             
-        self.nonlinear_constraint_name.append([constr_name,lower,upper])
+        self.nonlin_bound_blocks.append([constr_name,lower,upper])
 
+    def createNonlinBounds(self):
+        self.nonlin_upper=np.zeros(self.ind_nonlinear_constraint[-1])
+        self.nonlin_lower=np.zeros(self.ind_nonlinear_constraint[-1])
         
+        for block in self.nonlin_bound_blocks:
+            constr_name=block[0]
+            lower=block[1]
+            upper=block[2]
+            
+            cStart, cEnd = self.indexNonlinConstr(constr_name)
+            
+            self.nonlin_lower[cStart:cEnd]=lower
+            self.nonlin_upper[cStart:cEnd]=upper
+            
+    def createNonlinFunctions(self,filename_dest, filename_funcs):
+        space="   "
+        linebreak="\n"
+        string="from "+ filename_funcs+" import "
+        first=0
+        for func in self.func_needed:
+            if first==0:
+                first=1
+                string+=func
+            else:
+                string+=", "+func
+            
+            
+        string+=linebreak+linebreak
+        
+        string+= "def constr(x):"+linebreak
+        for var in self.variable_name:
+            vstart, vend=self.indexVar(var)
+            string+=space+var+"=x["+str(vstart)+":"+str(vend)+"]"+linebreak
+            
+        
+        print(string)
+            
 p1=Opt()
+
+
 p1.addVar("x1", 10)
 p1.addVar("x2",15)
+
 p1.addLinConstr("bilanz1", 20)
-p1.addLinConstr("bilanz2", 15)
+p1.addLinConstr("bilanz2", 15)        
+
+p1.addNonlinConstr("nonlin", 3)
+
 p1.setupIndices()
+
 A=np.ones((20,10))
 B=np.ones((15,15))
 p1.setSubMatrix("x1", "bilanz1", A)
 p1.setSubMatrix("x2", "bilanz2", B)
-p1.createMatrixDense()
-
 
 p1.setLinBound("bilanz1", np.ones(20), np.ones(20))
-p1.createLinBounds()
-p1.setBound("x1", np.ones(10), np.ones(10))
-p1.CreateBounds()
 
-p1.addNonlinConstr("nonlin", 3)
+p1.setBound("x1", np.ones(10), np.ones(10))
+
 p1.setNonlinConstrFunc("nonlin","sigma","jacsigma",["x1","x2"],1)
 p1.setNonlinBound("nonlin", np.ones(3), np.ones(3))
+
+
+
+
+p1.createBounds()
+p1.createLinBounds()
+p1.createMatrixDense()
+p1.createNonlinBounds()
+p1.createNonlinFunctions("funs", "funs2")
+
+
