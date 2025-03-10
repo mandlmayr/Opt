@@ -203,7 +203,8 @@ class Opt:
     def createNonlinFunctions(self,filename_dest, filename_funcs):
         space="   "
         linebreak="\n"
-        string="from "+ filename_funcs+" import "
+        string="import numpy as np"+linebreak
+        string+="from "+ filename_funcs+" import "
         first=0
         for func in self.func_needed:
             if first==0:
@@ -219,8 +220,31 @@ class Opt:
         for var in self.variable_name:
             vstart, vend=self.indexVar(var)
             string+=space+var+"=x["+str(vstart)+":"+str(vend)+"]"+linebreak
-            
+        string+=linebreak
+        string+=space+"ret=np.zeros("+str(self.ind_nonlinear_constraint[-1])+")"+linebreak+linebreak
         
+        
+        for block in self.func_block:
+            constr=block[0]
+            func=block[1]
+            jac=block[2]
+            variables=block[3]
+            parameter=block[4]
+            
+            cStart, cEnd = self.indexNonlinConstr(constr)
+            
+            string+=space+"ret["+str(cStart)+":"+str(cEnd)+"]="+func+"("
+            first=0
+            for var in variables:
+                if first==0:
+                    first=1
+                    string+=var
+                else:
+                    string+=", "+var         
+            string+=", "+str(parameter)+")"+linebreak
+        string+=linebreak
+        string+=space+"return ret"
+                    
         print(string)
             
 p1=Opt()
@@ -233,6 +257,7 @@ p1.addLinConstr("bilanz1", 20)
 p1.addLinConstr("bilanz2", 15)        
 
 p1.addNonlinConstr("nonlin", 3)
+p1.addNonlinConstr("nonlin2", 4)
 
 p1.setupIndices()
 
@@ -246,6 +271,7 @@ p1.setLinBound("bilanz1", np.ones(20), np.ones(20))
 p1.setBound("x1", np.ones(10), np.ones(10))
 
 p1.setNonlinConstrFunc("nonlin","sigma","jacsigma",["x1","x2"],1)
+p1.setNonlinConstrFunc("nonlin2", "delta", "jacdelta", ["x2"], [1,2])
 p1.setNonlinBound("nonlin", np.ones(3), np.ones(3))
 
 
