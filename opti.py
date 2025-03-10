@@ -21,6 +21,12 @@ class Opt:
         self.lin_bound_blocks=[]
         self.bound_blocks=[]
         
+        self.func_block=[]
+        self.func_needed=set()
+        
+        self.nonlin_bound_blocks=[]
+        
+        
 
     def addVar(self, name, size):
         self.variable_name.append(name)
@@ -158,8 +164,30 @@ class Opt:
             
             self.lower[vStart:vEnd]=lower
             self.upper[vStart:vEnd]=upper
-        
             
+    def setNonlinConstrFunc(self, constr_name,function_name, jac_name, variable_list, parameter):
+        if constr_name not in self.nonlinear_constraint_name:
+            raise Exception("Constraint does not exist!!!")
+        if not (set(variable_list)<=set(self.variable_name)):
+            raise Exception("Variable list is not contaiend in the problem variables!!!")         
+        self.func_block.append([constr_name,function_name,jac_name,variable_list,parameter])
+        self.func_needed.add(function_name)
+        self.func_needed.add(jac_name)
+    
+    def setNonlinBound(self, constr_name, lower, upper):
+        if constr_name not in self.nonlinear_constraint_name:
+            raise Exception("Constraint does not exist!!!")
+            
+        indC=self.nonlinear_constraint_name.index(constr_name)
+        size=self.nonlinear_constraint_size[indC]
+        if len(lower)!=size:
+            raise Exception("Lower dimension not correct!!!")
+            
+        if len(upper)!=size:
+            raise Exception("Upper dimension not correct!!!")
+            
+        self.nonlinear_constraint_name.append([constr_name,lower,upper])
+
         
 p1=Opt()
 p1.addVar("x1", 10)
@@ -178,3 +206,7 @@ p1.setLinBound("bilanz1", np.ones(20), np.ones(20))
 p1.createLinBounds()
 p1.setBound("x1", np.ones(10), np.ones(10))
 p1.CreateBounds()
+
+p1.addNonlinConstr("nonlin", 3)
+p1.setNonlinConstrFunc("nonlin","sigma","jacsigma",["x1","x2"],1)
+p1.setNonlinBound("nonlin", np.ones(3), np.ones(3))
