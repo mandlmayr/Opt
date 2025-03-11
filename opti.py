@@ -201,7 +201,7 @@ class Opt:
             self.nonlin_upper[cStart:cEnd]=upper
             
     def createNonlinFunctions(self,filename_dest, filename_funcs):
-        space="   "
+        space="    "
         linebreak="\n"
         string="import numpy as np"+linebreak
         string+="from "+ filename_funcs+" import "
@@ -244,8 +244,50 @@ class Opt:
             string+=", "+str(parameter)+")"+linebreak
         string+=linebreak
         string+=space+"return ret"
+        
+        string+=linebreak+linebreak
+        string+="def JacConstr(x):"+linebreak
+        for var in self.variable_name:
+            vstart, vend=self.indexVar(var)
+            string+=space+var+"=x["+str(vstart)+":"+str(vend)+"]"+linebreak+linebreak
+        string+=space+"jac=np.zeros(("+str(self.ind_nonlinear_constraint[-1])+","+str(self.ind_var[-1])+"))"+linebreak+linebreak
+            
+        for block in self.func_block:
+            constr=block[0]
+            func=block[1]
+            jac=block[2]
+            variables=block[3]
+            parameter=block[4]
+            
+            cStart, cEnd = self.indexNonlinConstr(constr)
+            string+=space
+            first=0
+            for var in variables:
+                if first==0:
+                    first=1
+                    string+="d"+var+"_"+func
+                else:
+                    string+=", "+"d"+var+"_"+func         
+            string+="="+jac+"("
+            first=0
+            for var in variables:
+                if first==0:
+                    first=1
+                    string+=var
+                else:
+                    string+=", "+var         
+            string+=", "+str(parameter)+")"+linebreak
+            for var in variables:
+                cStart, cEnd=self.indexNonlinConstr(constr)
+                vStart, vEnd=self.indexVar(var)
+                string+=space+"jac["+str(cStart)+":"+str(cEnd)+","+str(vStart)+":"+str(vEnd)+"]=d"+var+"_"+func+linebreak
+            string+=linebreak
+        string+=space+"return jac"
                     
-        print(string)
+        f = open(filename_dest+".py", "w")
+        f.write(string)
+        f.close()
+
             
 p1=Opt()
 
