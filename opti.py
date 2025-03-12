@@ -24,7 +24,9 @@ class Opt:
         self.func_block=[]
         self.func_needed=set()
         
-        self.nonlin_bound_blocks=[]    
+        self.nonlin_bound_blocks=[]  
+        
+        self.obj_func_block=[]
 
     def addVar(self, name, size):
         self.variable_name.append(name)
@@ -249,7 +251,8 @@ class Opt:
         string+="def JacConstr(x):"+linebreak
         for var in self.variable_name:
             vstart, vend=self.indexVar(var)
-            string+=space+var+"=x["+str(vstart)+":"+str(vend)+"]"+linebreak+linebreak
+            string+=space+var+"=x["+str(vstart)+":"+str(vend)+"]"+linebreak
+        string+=linebreak
         string+=space+"jac=np.zeros(("+str(self.ind_nonlinear_constraint[-1])+","+str(self.ind_var[-1])+"))"+linebreak+linebreak
             
         for block in self.func_block:
@@ -287,8 +290,16 @@ class Opt:
         f = open(filename_dest+".py", "w")
         f.write(string)
         f.close()
+        
+    def addObjPart(self, function_name, jac_name, hess_name, variable_list, parameter):
+        self.obj_func_block.append([function_name,jac_name,hess_name,variable_list,parameter])
+        self.func_needed.add(function_name)
+        self.func_needed.add(jac_name)
+        self.func_needed.add(hess_name)
+  
+        
 
-            
+
 p1=Opt()
 
 
@@ -317,7 +328,7 @@ p1.setNonlinConstrFunc("nonlin2", "delta", "jacdelta", ["x2"], [1,2])
 p1.setNonlinBound("nonlin", np.ones(3), np.ones(3))
 
 
-
+p1.addObjPart("sin", "cos", "sin", ["x1","x2"], 1)
 
 p1.createBounds()
 p1.createLinBounds()
