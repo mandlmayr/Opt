@@ -362,7 +362,54 @@ class Opt:
                 string+=", "+str(parameter)+")"+linebreak
             string+=linebreak
             
-        string+=space+"return grad"
+        string+=space+"return grad"+linebreak+linebreak
+        
+        
+        
+        
+        string+="def hess(x):"+linebreak
+        for var in self.variable_name:
+            vstart, vend=self.indexVar(var)
+            string+=space+var+"=x["+str(vstart)+":"+str(vend)+"]"+linebreak
+        string+=linebreak
+        string+=space+"hess=np.zeros(("+str(self.ind_var[-1])+","+str(self.ind_var[-1])+"))"+linebreak+linebreak
+        for block in self.obj_func_block:
+            func=block[0]
+            jac=block[1]
+            hess=block[2]            
+            variables=block[3]
+            parameter=block[4]
+            
+            string+=space
+            first=0
+            for var in variables:
+                for var2 in variables:
+                    if first==0:
+                        first=1
+                        string+="d"+var+var2+"_"+func
+                    else:
+                        string+=", d"+var+var2+"_"+func
+            string+="="+hess+"("
+            first=0
+            for var in variables:
+                if first==0:
+                    first=1
+                    string+=var
+                else:
+                    string+=", "+var         
+            string+=", "+str(parameter)+")"+linebreak
+            
+            
+            for var in variables:
+                for var2 in variables:
+                    vStart, vEnd = self.indexVar(var) 
+                    v2Start,v2End= self.indexVar(var2)
+                    
+                    string+=space+"hess["+str(vStart)+":"+str(vEnd)+"," +str(v2Start)+":"+str(v2End)+"]+="+"d"+var+var2+"_"+func+linebreak
+     
+            string+=linebreak
+            
+        string+=space+"return hess"
                 
             
                 
