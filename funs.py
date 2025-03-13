@@ -1,5 +1,5 @@
 import numpy as np
-from funs2 import hess1, jacdelta, hess4, fun1, fun2, jac2, fun3, jacsigma, delta, hess2, jac1, jac3, sigma
+from funs2 import jacdelta, fun1, jac2, delta, jac1, hess4, jacsigma, hess2, jac3, fun2, sigma, hess1, fun3
 
 def constr(x):
     x1=x[0:10]
@@ -37,7 +37,7 @@ def obj(x):
     obj=0
 
     obj+=fun1(x1, x2)
-    obj+=fun2(x1)
+    obj+=fun2(x1, v)
     obj+=fun3(x1, v)
 
     return obj
@@ -53,8 +53,9 @@ def grad(x):
     grad[0:10]+=dx1_fun1(x1, x2, 1)
     grad[10:25]+=dx2_fun1(x1, x2, 1)
 
-    dx1_fun2=jac2(x1, 1)
-    grad[0:10]+=dx1_fun2(x1, 1)
+    dx1_fun2, dv_fun2=jac2(x1, v, 1)
+    grad[0:10]+=dx1_fun2(x1, v, 1)
+    grad[25:28]+=dv_fun2(x1, v, 1)
 
     dx1_fun3, dv_fun3=jac3(x1, v, 1)
     grad[0:10]+=dx1_fun3(x1, v, 1)
@@ -75,8 +76,11 @@ def hess(x):
     hess[10:25,0:10]+=dx2x1_fun1
     hess[10:25,10:25]+=dx2x2_fun1
 
-    dx1x1_fun2=hess2(x1, 1)
+    dx1x1_fun2, dx1v_fun2, dvx1_fun2, dvv_fun2=hess2(x1, v, 1)
     hess[0:10,0:10]+=dx1x1_fun2
+    hess[0:10,25:28]+=dx1v_fun2
+    hess[25:28,0:10]+=dvx1_fun2
+    hess[25:28,25:28]+=dvv_fun2
 
     dx1x1_fun3, dx1v_fun3, dvx1_fun3, dvv_fun3=hess4(x1, v, 1)
     hess[0:10,0:10]+=dx1x1_fun3

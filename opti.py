@@ -460,7 +460,7 @@ p1.setNonlinBound("nonlin", np.ones(3), np.ones(3))
 
 
 p1.addObjPart("fun1", "jac1", "hess1", ["x1","x2"], 1)
-p1.addObjPart("fun2", "jac2", "hess2", ["x1"], 1)
+p1.addObjPart("fun2", "jac2", "hess2", ["x1","v"], 1)
 p1.addObjPart("fun3", "jac3", "hess4", ["x1","v"], 1)
 
 p1.createBounds()
@@ -468,5 +468,6 @@ p1.createLinBounds()
 p1.createMatrixDense()
 p1.createNonlinBounds()
 p1.createNonlinFunctions("funs", "funs2")
+
 
 
