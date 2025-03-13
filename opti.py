@@ -286,6 +286,87 @@ class Opt:
                 string+=space+"jac["+str(cStart)+":"+str(cEnd)+","+str(vStart)+":"+str(vEnd)+"]=d"+var+"_"+func+linebreak
             string+=linebreak
         string+=space+"return jac"
+        string+=linebreak+linebreak
+        
+        
+        
+        
+        string+="def obj(x):"+linebreak
+        for var in self.variable_name:
+            vstart, vend=self.indexVar(var)
+            string+=space+var+"=x["+str(vstart)+":"+str(vend)+"]"+linebreak
+        string+=linebreak
+        string+=space+"obj=0"+linebreak+linebreak
+        for block in self.obj_func_block:
+            func=block[0]
+            jac=block[1]
+            hess=block[2]            
+            variables=block[3]
+            parameter=block[4]
+            
+            string+=space+"obj+="+func+"("
+            first=0
+            for var in variables:
+                if first==0:
+                    first=1
+                    string+=var
+                else:
+                    string+=", "+var     
+            string+=")"+linebreak
+        string+=linebreak
+        string+=space+"return obj"
+        string+=linebreak+linebreak
+        
+        
+        string+="def grad(x):"+linebreak
+        for var in self.variable_name:
+            vstart, vend=self.indexVar(var)
+            string+=space+var+"=x["+str(vstart)+":"+str(vend)+"]"+linebreak
+        string+=linebreak
+        string+=space+"grad=np.zeros("+str(self.ind_var[-1])+")"+linebreak+linebreak
+        for block in self.obj_func_block:
+            func=block[0]
+            jac=block[1]
+            hess=block[2]            
+            variables=block[3]
+            parameter=block[4]
+            
+            string+=space
+            first=0
+            for var in variables:
+                if first==0:
+                    first=1
+                    string+="d"+var+"_"+func
+                else:
+                    string+=", "+"d"+var+"_"+func         
+            string+="="+jac+"("
+            first=0
+            for var in variables:
+                if first==0:
+                    first=1
+                    string+=var
+                else:
+                    string+=", "+var         
+            string+=", "+str(parameter)+")"+linebreak
+            for var in variables:
+                vStart, vEnd = self.indexVar(var)
+                
+                string+=space+"grad["+str(vStart)+":"+str(vEnd)+"]+="+"d"+var+"_"+func+"("
+                first=0
+                for var in variables:
+                    if first==0:
+                        first=1
+                        string+=var
+                    else:
+                        string+=", "+var         
+                string+=", "+str(parameter)+")"+linebreak
+            string+=linebreak
+            
+        string+=space+"return grad"
+                
+            
+                
+        
                     
         f = open(filename_dest+".py", "w")
         f.write(string)
@@ -296,6 +377,8 @@ class Opt:
         self.func_needed.add(function_name)
         self.func_needed.add(jac_name)
         self.func_needed.add(hess_name)
+        
+        
   
         
 
@@ -305,6 +388,7 @@ p1=Opt()
 
 p1.addVar("x1", 10)
 p1.addVar("x2",15)
+p1.addVar("v",3)
 
 p1.addLinConstr("bilanz1", 20)
 p1.addLinConstr("bilanz2", 15)        
@@ -328,7 +412,9 @@ p1.setNonlinConstrFunc("nonlin2", "delta", "jacdelta", ["x2"], [1,2])
 p1.setNonlinBound("nonlin", np.ones(3), np.ones(3))
 
 
-p1.addObjPart("sin", "cos", "sin", ["x1","x2"], 1)
+p1.addObjPart("fun1", "jac1", "hess1", ["x1","x2"], 1)
+p1.addObjPart("fun2", "jac2", "hess2", ["x1"], 1)
+p1.addObjPart("fun3", "jac3", "hess4", ["x1","v"], 1)
 
 p1.createBounds()
 p1.createLinBounds()
