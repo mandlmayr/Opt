@@ -410,10 +410,6 @@ class Opt:
             string+=linebreak
             
         string+=space+"return hess"
-                
-            
-                
-        
                     
         f = open(filename_dest+".py", "w")
         f.write(string)
