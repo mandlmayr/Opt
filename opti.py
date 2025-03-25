@@ -312,7 +312,7 @@ class Opt:
                     string+=var
                 else:
                     string+=", "+var     
-            string+=")"+linebreak
+            string+=", "+str(parameter)+")"+linebreak
         string+=linebreak
         string+=space+"return obj"
         string+=linebreak+linebreak
@@ -458,6 +458,7 @@ p1.setNonlinBound("nonlin", np.ones(3), np.ones(3))
 p1.addObjPart("fun1", "jac1", "hess1", ["x1","x2"], 1)
 p1.addObjPart("fun2", "jac2", "hess2", ["x1","v"], 1)
 p1.addObjPart("fun3", "jac3", "hess4", ["x1","v"], 1)
+p1.addObjPart("fun4", "jac4", "hess5", ["x1","v"], 1)
 
 p1.createBounds()
 p1.createLinBounds()
