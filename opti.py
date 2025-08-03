@@ -5,11 +5,14 @@ Created on Mon Feb 24 20:32:00 2025
 @author: Michael
 """
 import numpy as np
+from scipy.sparse import  csr_matrix
 
 class Opt:
-    def __init__(self):   
+    def __init__(self,sparse=False):   
         self.variable_name=[]
         self.variable_size=[]
+        
+        self.parameter_name=[]
         
         self.linear_constraint_name=[]
         self.linear_constraint_size=[]
@@ -27,10 +30,15 @@ class Opt:
         self.nonlin_bound_blocks=[]  
         
         self.obj_func_block=[]
+        
+        self.sparsity=sparse
 
-    def addVar(self, name, size):
+    def addVar(self, name,size):
         self.variable_name.append(name)
         self.variable_size.append(size)
+    
+    def addPar(self, name):
+        self.parameter_name.append(name)
         
     def addLinConstr(self, name, size):
         self.linear_constraint_name.append(name)
@@ -95,7 +103,7 @@ class Opt:
             
         self.matrix_blocks.append([constr_name,var_name,matrix])
         
-    def createMatrixDense(self):
+    def createMatrix(self):
         self.matrix=np.zeros((self.ind_linear_constraint[-1],self.ind_var[-1]))
         
         for block in self.matrix_blocks:
@@ -108,7 +116,8 @@ class Opt:
             
             self.matrix[cStart:cEnd, vStart:vEnd]=mat
             
-        
+        if(self.sparsity):
+            self.matrix=csr_matrix(self.matrix)
     def setLinBound(self, constr_name, lower, upper):
         if constr_name not in self.linear_constraint_name:
             raise Exception("Constraint does not exist!!!")
@@ -165,12 +174,14 @@ class Opt:
             self.lower[vStart:vEnd]=lower
             self.upper[vStart:vEnd]=upper
             
-    def setNonlinConstrFunc(self, constr_name,function_name, jac_name, variable_list, parameter):
+    def setNonlinConstrFunc(self, constr_name,function_name, jac_name, variable_list, parameter_list):
         if constr_name not in self.nonlinear_constraint_name:
             raise Exception("Constraint does not exist!!!")
         if not (set(variable_list)<=set(self.variable_name)):
+            raise Exception("Variable list is not contaiend in the problem variables!!!")     
+        if not (set(parameter_list)<=set(self.parameter_name)):
             raise Exception("Variable list is not contaiend in the problem variables!!!")         
-        self.func_block.append([constr_name,function_name,jac_name,variable_list,parameter])
+        self.func_block.append([constr_name,function_name,jac_name,variable_list,parameter_list])
         self.func_needed.add(function_name)
         self.func_needed.add(jac_name)
     
@@ -202,11 +213,14 @@ class Opt:
             self.nonlin_lower[cStart:cEnd]=lower
             self.nonlin_upper[cStart:cEnd]=upper
             
-    def createNonlinFunctions(self,filename_dest, filename_funcs):
+    def createNonlinFunctions(self,filename_dest, filename_funcs, filename_parameters):
         space="    "
         linebreak="\n"
         string="import numpy as np"+linebreak
+        if(self.sparsity):
+            string+="from scipy.sparse import csr_matrix"+linebreak
         string+="from "+ filename_funcs+" import "
+
         first=0
         for func in self.func_needed:
             if first==0:
@@ -214,11 +228,23 @@ class Opt:
                 string+=func
             else:
                 string+=", "+func
-            
+        string+=linebreak
+        string+="from "+ filename_parameters+" import "
+        first=0
+        for parameter in self.parameter_name:
+            if first==0:
+                first=1
+                string+=parameter
+            else:
+                string+=", "+parameter
             
         string+=linebreak+linebreak
         
-        string+= "def constr(x):"+linebreak
+        string+= "def constrP(x"
+        for par in self.parameter_name:
+            string+=" ,"+par
+        
+        string+="):"+linebreak
         for var in self.variable_name:
             vstart, vend=self.indexVar(var)
             string+=space+var+"=x["+str(vstart)+":"+str(vend)+"]"+linebreak
@@ -231,7 +257,7 @@ class Opt:
             func=block[1]
             jac=block[2]
             variables=block[3]
-            parameter=block[4]
+            parameters=block[4]
             
             cStart, cEnd = self.indexNonlinConstr(constr)
             
@@ -242,13 +268,19 @@ class Opt:
                     first=1
                     string+=var
                 else:
-                    string+=", "+var         
-            string+=", "+str(parameter)+")"+linebreak
+                    string+=", "+var       
+                    
+            for parameter in parameters:
+                string+=", "+parameter
+            string +=")"+linebreak
         string+=linebreak
         string+=space+"return ret"
         
         string+=linebreak+linebreak
-        string+="def JacConstr(x):"+linebreak
+        string+="def JacConstrP(x"
+        for par in self.parameter_name:
+            string+=" ,"+par      
+        string+="):"+linebreak
         for var in self.variable_name:
             vstart, vend=self.indexVar(var)
             string+=space+var+"=x["+str(vstart)+":"+str(vend)+"]"+linebreak
@@ -260,7 +292,7 @@ class Opt:
             func=block[1]
             jac=block[2]
             variables=block[3]
-            parameter=block[4]
+            parameters=block[4]
             
             cStart, cEnd = self.indexNonlinConstr(constr)
             string+=space
@@ -279,19 +311,27 @@ class Opt:
                     string+=var
                 else:
                     string+=", "+var         
-            string+=", "+str(parameter)+")"+linebreak
+            for parameter in parameters:
+                string+=", "+parameter
+            string +=")"+linebreak
             for var in variables:
                 cStart, cEnd=self.indexNonlinConstr(constr)
                 vStart, vEnd=self.indexVar(var)
                 string+=space+"jac["+str(cStart)+":"+str(cEnd)+","+str(vStart)+":"+str(vEnd)+"]=d"+var+"_"+func+linebreak
             string+=linebreak
-        string+=space+"return jac"
+        if self.sparsity:
+            string+=space+"return csr_matrix(jac)"
+        else:
+            string+=space+"return jac"
         string+=linebreak+linebreak
         
         
         
         
-        string+="def obj(x):"+linebreak
+        string+="def objP(x"   
+        for par in self.parameter_name:
+            string+=" ,"+par             
+        string+="):"+linebreak
         for var in self.variable_name:
             vstart, vend=self.indexVar(var)
             string+=space+var+"=x["+str(vstart)+":"+str(vend)+"]"+linebreak
@@ -312,13 +352,18 @@ class Opt:
                     string+=var
                 else:
                     string+=", "+var     
-            string+=", "+str(parameter)+")"+linebreak
+            for parameter in parameters:
+                string+=", "+parameter
+            string +=")"+linebreak
         string+=linebreak
         string+=space+"return obj"
         string+=linebreak+linebreak
         
         
-        string+="def grad(x):"+linebreak
+        string+="def gradP(x"
+        for par in self.parameter_name:
+            string+=" ,"+par             
+        string+="):"+linebreak
         for var in self.variable_name:
             vstart, vend=self.indexVar(var)
             string+=space+var+"=x["+str(vstart)+":"+str(vend)+"]"+linebreak
@@ -347,7 +392,9 @@ class Opt:
                     string+=var
                 else:
                     string+=", "+var         
-            string+=", "+str(parameter)+")"+linebreak
+            for parameter in parameters:
+                string+=", "+parameter
+            string +=")"+linebreak
             for var in variables:
                 vStart, vEnd = self.indexVar(var)
                 
@@ -367,7 +414,10 @@ class Opt:
         
         
         
-        string+="def hess(x):"+linebreak
+        string+="def hessP(x"
+        for par in self.parameter_name:
+            string+=" ,"+par             
+        string+="):"+linebreak
         for var in self.variable_name:
             vstart, vend=self.indexVar(var)
             string+=space+var+"=x["+str(vstart)+":"+str(vend)+"]"+linebreak
@@ -397,7 +447,9 @@ class Opt:
                     string+=var
                 else:
                     string+=", "+var         
-            string+=", "+str(parameter)+")"+linebreak
+            for parameter in parameters:
+                string+=", "+parameter
+            string +=")"+linebreak
             
             
             for var in variables:
@@ -408,9 +460,46 @@ class Opt:
                     string+=space+"hess["+str(vStart)+":"+str(vEnd)+"," +str(v2Start)+":"+str(v2End)+"]+="+"d"+var+var2+"_"+func+linebreak
      
             string+=linebreak
-            
-        string+=space+"return hess"
+        if self.sparsity:
+            string+=space+"return csr_matrix(hess)"
+        else:
+            string+=space+"return hess"
                     
+        string+=linebreak+linebreak
+        string+="def constr(x):"+linebreak
+        string+=space+"return constr(x"
+        for par in self.parameter_name:
+            string+=", "+par             
+        string+=")"+linebreak
+        
+        string+=linebreak+linebreak
+        string+="def JacConstr(x):"+linebreak
+        string+=space+"return JacConstrP(x"
+        for par in self.parameter_name:
+            string+=", "+par             
+        string+=")"+linebreak
+        
+        string+=linebreak+linebreak
+        string+="def obj(x):"+linebreak
+        string+=space+"return objP(x"
+        for par in self.parameter_name:
+            string+=", "+par             
+        string+=")"+linebreak
+    
+        string+=linebreak+linebreak
+        string+="def grad(x):"+linebreak
+        string+=space+"return gradP(x"
+        for par in self.parameter_name:
+            string+=", "+par             
+        string+=")"+linebreak
+        
+        string+=linebreak+linebreak
+        string+="def hess(x):"+linebreak
+        string+=space+"return hessP(x"
+        for par in self.parameter_name:
+            string+=", "+par             
+        string+=")"+linebreak
+        
         f = open(filename_dest+".py", "w")
         f.write(string)
         f.close()
@@ -426,12 +515,16 @@ class Opt:
         
 
 
-p1=Opt()
+p1=Opt(True)
 
 
 p1.addVar("x1", 10)
 p1.addVar("x2",15)
 p1.addVar("v",3)
+
+
+p1.addPar('s1')
+p1.addPar('s2')
 
 p1.addLinConstr("bilanz1", 20)
 p1.addLinConstr("bilanz2", 15)        
@@ -450,21 +543,21 @@ p1.setLinBound("bilanz1", np.ones(20), np.ones(20))
 
 p1.setBound("x1", np.ones(10), np.ones(10))
 
-p1.setNonlinConstrFunc("nonlin","sigma","jacsigma",["x1","x2"],1)
-p1.setNonlinConstrFunc("nonlin2", "delta", "jacdelta", ["x2"], [1,2])
+p1.setNonlinConstrFunc("nonlin","sigma","jacsigma",["x1","x2"],["s1","s2"])
+p1.setNonlinConstrFunc("nonlin2", "delta", "jacdelta", ["x1"], ['s1','s1'])
 p1.setNonlinBound("nonlin", np.ones(3), np.ones(3))
 
 
-p1.addObjPart("fun1", "jac1", "hess1", ["x1","x2"], 1)
-p1.addObjPart("fun2", "jac2", "hess2", ["x1","v"], 1)
-p1.addObjPart("fun3", "jac3", "hess4", ["x1","v"], 1)
-p1.addObjPart("fun4", "jac4", "hess5", ["x1","v"], 1)
+p1.addObjPart("fun1", "jac1", "hess1", ["x1","x2"], ["s1"])
+p1.addObjPart("fun2", "jac2", "hess2", ["x1","v"], ['s1','s1'])
+p1.addObjPart("fun3", "jac3", "hess4", ["x1","v"], ['s1','s1'])
+p1.addObjPart("fun4", "jac4", "hess5", ["x1","v"], ['s1','s1'])
 
 p1.createBounds()
 p1.createLinBounds()
-p1.createMatrixDense()
+p1.createMatrix()
 p1.createNonlinBounds()
-p1.createNonlinFunctions("funs", "funs2")
+p1.createNonlinFunctions("funs", "funs2","params")
 
 
 
