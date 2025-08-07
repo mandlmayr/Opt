@@ -1,6 +1,6 @@
 import numpy as np
 from scipy.sparse import csr_matrix
-from funs2 import jac4, fun3, hess4, fun4, hess2, jacdelta, fun2, hess1, jac1, jac3, hess5, jacsigma, jac2, sigma, delta, fun1
+from funs2 import jacdelta, fun1, delta, sigma, fun3, fun4, hess1, jac1, hess2, jac3, hess5, jac2, jacsigma, fun2, hess4, jac4
 from params import s1, s2
 
 def constrP(x ,s1 ,s2):

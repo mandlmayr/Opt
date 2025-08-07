@@ -511,7 +511,15 @@ class Opt:
         self.func_needed.add(hess_name)
         
         
-  
+    def createNonlinearProgramm(self):
+        self.createBounds()
+        self.createLinBounds()
+        self.createMatrix()
+        self.createNonlinBounds()
+        
+        return self.lower, self.upper, self.matrix, self.lin_lower, self.lin_upper, self.nonlin_lower, self.nonlin_upper
+        
+      
         
 
 
@@ -553,11 +561,9 @@ p1.addObjPart("fun2", "jac2", "hess2", ["x1","v"], ['s1','s1'])
 p1.addObjPart("fun3", "jac3", "hess4", ["x1","v"], ['s1','s1'])
 p1.addObjPart("fun4", "jac4", "hess5", ["x1","v"], ['s1','s1'])
 
-p1.createBounds()
-p1.createLinBounds()
-p1.createMatrix()
-p1.createNonlinBounds()
+
 p1.createNonlinFunctions("funs", "funs2","params")
 
+a,b,c,d,e,f,g =p1.createNonlinearProgramm()
 
 
