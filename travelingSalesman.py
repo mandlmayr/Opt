@@ -61,16 +61,16 @@ class Network:
         return route, total_cost
     
 
-# Example usage:
-cities = [
-    CityNode(0, 0, "A"),
-    CityNode(1, 2, "B"),
-    CityNode(4, 0, "C"),
-    CityNode(5, 3, "D"),
-]
+# # Example usage:
+# cities = [
+#     CityNode(0, 0, "A"),
+#     CityNode(1, 2, "B"),
+#     CityNode(4, 0, "C"),
+#     CityNode(5, 3, "D"),
+# ]
 
-network = Network(cities)
-route, cost = network.solve_tsp()
+# network = Network(cities)
+# route, cost = network.solve_tsp()
 
-print("Route:", ' -> '.join(network.nodes[i].name for i in route))
-print("Total cost (scaled):", cost)
+# print("Route:", ' -> '.join(network.nodes[i].name for i in route))
+# print("Total cost (scaled):", cost)
