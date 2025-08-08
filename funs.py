@@ -1,6 +1,6 @@
 import numpy as np
-from scipy.sparse import csr_matrix
-from funs2 import jacdelta, fun1, delta, sigma, fun3, fun4, hess1, jac1, hess2, jac3, hess5, jac2, jacsigma, fun2, hess4, jac4
+from scipy.sparse import csr_matrix, lil_matrix
+from funs2 import fun3, sigma, fun4, hess1, fun2, jac1, jac4, hess5, jacsigma, hess2, delta, jac3, fun1, hess4, jac2, jacdelta
 from params import s1, s2
 
 def constrP(x ,s1 ,s2):
@@ -20,7 +20,7 @@ def JacConstrP(x ,s1 ,s2):
     x2=x[10:25]
     v=x[25:28]
 
-    jac=np.zeros((7,28))
+    jac=lil_matrix((7,28))
 
     dx1_sigma, dx2_sigma=jacsigma(x1, x2, s1, s2)
     jac[0:3,0:10]=dx1_sigma
@@ -75,7 +75,7 @@ def hessP(x ,s1 ,s2):
     x2=x[10:25]
     v=x[25:28]
 
-    hess=np.zeros((28,28))
+    hess=lil_matrix((28,28))
 
     dx1x1_fun1, dx1x2_fun1, dx2x1_fun1, dx2x2_fun1=hess1(x1, x2, s1, s1)
     hess[0:10,0:10]+=dx1x1_fun1
@@ -100,6 +100,7 @@ def hessP(x ,s1 ,s2):
     hess[0:10,25:28]+=dx1v_fun4
     hess[25:28,0:10]+=dvx1_fun4
     hess[25:28,25:28]+=dvv_fun4
+
 
     return csr_matrix(hess)
 

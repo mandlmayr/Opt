@@ -18,7 +18,7 @@ DESIRABILITY = np.array([
     [0.3,    0.1,  0.4,  0.9,  0.1],  # To umami
 ])
 
-FAT_EFFECT = 10*np.array([
+FAT_EFFECT = 5*np.array([
     [ 0.0,  0.0, -0.1,  0.0,  0.0],  # TO sweet
     [ 0.0,  0.0, -0.1,  0.0,  0.0],  # TO salty
     [ 0.1,  0.1,  0.0,  0.0,  0.1],  # TO sour (encourage sour if prior was fatty)
@@ -38,8 +38,9 @@ class FoodNode(Node):
 
         # 1. Ideal next profile = current * desirability matrix
         ideal_next =(DESIRABILITY+FAT_EFFECT*self.fat)@self.taste 
-        match_score=np.dot(ideal_next, other.taste)
+        match_score=np.dot(ideal_next, other.taste)/np.linalg.norm(ideal_next)/np.linalg.norm(other.taste)
         # 3. Cost = negative match (so lower cost = better match)
+        match_score+=max(self.fat-other.fat,0)
         return round(50000-match_score*1000)
 
 # Example usage
@@ -62,7 +63,9 @@ foods = [
 
     FoodNode("Fresh Strawberries", 0.8, 0.1, 0.4, 0.0, 0.0, 0.0),  # fruity sweet + a touch of acid
 
-    FoodNode("Parmesan Cheese", 0.0, 0.7, 0.0, 0.1, 1.0, 0.7),     # umami bomb, salty, fatty
+    FoodNode("Parmesan Cheese", 0.0, 0.7, 0.0, 0.1, 1.0, 0.7),   
+    
+    FoodNode("Pork belly", .1, 1, 0.0, 0.1, 1.0, 1), 
 
     FoodNode("Spiced Lentil Soup", 0.1, 0.4, 0.2, 0.1, 0.8, 0.5),  # warming, savory, slightly acidic
 ]

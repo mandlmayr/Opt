@@ -5,7 +5,7 @@ Created on Mon Feb 24 20:32:00 2025
 @author: Michael
 """
 import numpy as np
-from scipy.sparse import  csr_matrix
+from scipy.sparse import  csr_matrix, lil_matrix
 
 class Opt:
     def __init__(self,sparse=False):   
@@ -104,7 +104,7 @@ class Opt:
         self.matrix_blocks.append([constr_name,var_name,matrix])
         
     def createMatrix(self):
-        self.matrix=np.zeros((self.ind_linear_constraint[-1],self.ind_var[-1]))
+        self.matrix=lil_matrix((self.ind_linear_constraint[-1],self.ind_var[-1]))
         
         for block in self.matrix_blocks:
             constr_name=block[0]
@@ -218,7 +218,7 @@ class Opt:
         linebreak="\n"
         string="import numpy as np"+linebreak
         if(self.sparsity):
-            string+="from scipy.sparse import csr_matrix"+linebreak
+            string+="from scipy.sparse import csr_matrix, lil_matrix"+linebreak
         string+="from "+ filename_funcs+" import "
 
         first=0
@@ -285,7 +285,7 @@ class Opt:
             vstart, vend=self.indexVar(var)
             string+=space+var+"=x["+str(vstart)+":"+str(vend)+"]"+linebreak
         string+=linebreak
-        string+=space+"jac=np.zeros(("+str(self.ind_nonlinear_constraint[-1])+","+str(self.ind_var[-1])+"))"+linebreak+linebreak
+        string+=space+"jac=lil_matrix(("+str(self.ind_nonlinear_constraint[-1])+","+str(self.ind_var[-1])+"))"+linebreak+linebreak
             
         for block in self.func_block:
             constr=block[0]
@@ -319,10 +319,7 @@ class Opt:
                 vStart, vEnd=self.indexVar(var)
                 string+=space+"jac["+str(cStart)+":"+str(cEnd)+","+str(vStart)+":"+str(vEnd)+"]=d"+var+"_"+func+linebreak
             string+=linebreak
-        if self.sparsity:
-            string+=space+"return csr_matrix(jac)"
-        else:
-            string+=space+"return jac"
+        string+=space+"return csr_matrix(jac)"
         string+=linebreak+linebreak
         
         
@@ -422,7 +419,7 @@ class Opt:
             vstart, vend=self.indexVar(var)
             string+=space+var+"=x["+str(vstart)+":"+str(vend)+"]"+linebreak
         string+=linebreak
-        string+=space+"hess=np.zeros(("+str(self.ind_var[-1])+","+str(self.ind_var[-1])+"))"+linebreak+linebreak
+        string+=space+"hess=lil_matrix(("+str(self.ind_var[-1])+","+str(self.ind_var[-1])+"))"+linebreak+linebreak
         for block in self.obj_func_block:
             func=block[0]
             jac=block[1]
@@ -458,12 +455,9 @@ class Opt:
                     v2Start,v2End= self.indexVar(var2)
                     
                     string+=space+"hess["+str(vStart)+":"+str(vEnd)+"," +str(v2Start)+":"+str(v2End)+"]+="+"d"+var+var2+"_"+func+linebreak
-     
             string+=linebreak
-        if self.sparsity:
-            string+=space+"return csr_matrix(hess)"
-        else:
-            string+=space+"return hess"
+        string+=linebreak
+        string+=space+"return csr_matrix(hess)"
                     
         string+=linebreak+linebreak
         string+="def constr(x):"+linebreak
