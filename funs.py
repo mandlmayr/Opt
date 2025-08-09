@@ -10,7 +10,7 @@ def constrP(x ,s1 ,s2):
 
     ret=np.zeros(7)
 
-    ret[0:3]=sigma(x1, x2, s1, s2)
+    ret[0:3]=sigma(x1, x2, s1, 1)
     ret[3:7]=delta(x1, s1, s1)
 
     return ret
@@ -22,7 +22,7 @@ def JacConstrP(x ,s1 ,s2):
 
     jac=lil_matrix((7,28))
 
-    dx1_sigma, dx2_sigma=jacsigma(x1, x2, s1, s2)
+    dx1_sigma, dx2_sigma=jacsigma(x1, x2, s1, 1)
     jac[0:3,0:10]=dx1_sigma
     jac[0:3,10:25]=dx2_sigma
 
@@ -38,8 +38,8 @@ def objP(x ,s1 ,s2):
 
     obj=0
 
-    obj+=fun1(x1, x2, s1, s1)
-    obj+=fun2(x1, v, s1, s1)
+    obj+=fun1(x1, x2, s1)
+    obj+=fun2(x1, v, s1, 5)
     obj+=fun3(x1, v, s1, s1)
     obj+=fun4(x1, v, s1, s1)
 
@@ -52,13 +52,13 @@ def gradP(x ,s1 ,s2):
 
     grad=np.zeros(28)
 
-    dx1_fun1, dx2_fun1=jac1(x1, x2, s1, s1)
+    dx1_fun1, dx2_fun1=jac1(x1, x2, s1)
     grad[0:10]+=dx1_fun1(x1, x2, s1)
     grad[10:25]+=dx2_fun1(x1, x2, s1)
 
-    dx1_fun2, dv_fun2=jac2(x1, v, s1, s1)
-    grad[0:10]+=dx1_fun2(x1, v, s1)
-    grad[25:28]+=dv_fun2(x1, v, s1)
+    dx1_fun2, dv_fun2=jac2(x1, v, s1, 5)
+    grad[0:10]+=dx1_fun2(x1, v, 5)
+    grad[25:28]+=dv_fun2(x1, v, 5)
 
     dx1_fun3, dv_fun3=jac3(x1, v, s1, s1)
     grad[0:10]+=dx1_fun3(x1, v, s1)
@@ -77,13 +77,13 @@ def hessP(x ,s1 ,s2):
 
     hess=lil_matrix((28,28))
 
-    dx1x1_fun1, dx1x2_fun1, dx2x1_fun1, dx2x2_fun1=hess1(x1, x2, s1, s1)
+    dx1x1_fun1, dx1x2_fun1, dx2x1_fun1, dx2x2_fun1=hess1(x1, x2, s1)
     hess[0:10,0:10]+=dx1x1_fun1
     hess[0:10,10:25]+=dx1x2_fun1
     hess[10:25,0:10]+=dx2x1_fun1
     hess[10:25,10:25]+=dx2x2_fun1
 
-    dx1x1_fun2, dx1v_fun2, dvx1_fun2, dvv_fun2=hess2(x1, v, s1, s1)
+    dx1x1_fun2, dx1v_fun2, dvx1_fun2, dvv_fun2=hess2(x1, v, s1, 5)
     hess[0:10,0:10]+=dx1x1_fun2
     hess[0:10,25:28]+=dx1v_fun2
     hess[25:28,0:10]+=dvx1_fun2
