@@ -31,7 +31,9 @@ class Opt:
         
         self.obj_func_block=[]
         
-
+        self.cost_block=[]
+        
+        self.integrality_block=[]
     def addVar(self, name,size):
         self.variable_name.append(name)
         self.variable_size.append(size)
@@ -511,6 +513,50 @@ class Opt:
         f.write(string)
         f.close()
         
+    def addCost(self, var_name, cost): 
+        if var_name not in self.variable_name:
+            raise Exception("Variable does not exist!!!")            
+        indV=self.variable_name.index(var_name)
+        size=self.variable_size[indV]
+        if len(cost)!=size:
+            raise Exception("Cost dimension not correct!!!")
+            
+            
+        self.cost_block.append([var_name,cost])        
+        
+    def addIntegrality(self, var_name, integrality): 
+        if var_name not in self.variable_name:
+            raise Exception("Variable does not exist!!!")            
+        indV=self.variable_name.index(var_name)
+        size=self.variable_size[indV]
+        if len(integrality)!=size:
+            raise Exception("Integrality dimension not correct!!!")
+            
+            
+        self.integrality_block.append([var_name,integrality])   
+      
+
+    def createLinearCost(self):
+        self.cost=np.zeros(self.ind_var[-1])
+        
+        for block in self.cost_block:
+            var_name=block[0]
+            cost=block[1]
+            
+            vStart, vEnd = self.indexVar(var_name)
+            
+            self.cost[vStart:vEnd]=cost
+            
+    def createIntegrality(self):
+        self.integrality=np.zeros(self.ind_var[-1])
+        
+        for block in self.integrality_block:
+            var_name=block[0]
+            integrality=block[1]
+            vStart, vEnd = self.indexVar(var_name)
+            
+            self.integrality[vStart:vEnd]=integrality
+    
     def addObjPart(self, function_name, jac_name, hess_name, variable_list, parameter):
         self.obj_func_block.append([function_name,jac_name,hess_name,variable_list,parameter])
         self.func_needed.add(function_name)
@@ -526,8 +572,8 @@ class Opt:
         
         return self.lower, self.upper, self.matrix, self.lin_lower, self.lin_upper, self.nonlin_lower, self.nonlin_upper
         
-      
-        
+     
+    
 
 
 p1=Opt()
@@ -551,6 +597,7 @@ p1.setupIndices()
 
 A=np.ones((20,10))
 B=np.ones((15,15))
+
 p1.setSubMatrix("x1", "bilanz1", A)
 p1.setSubMatrix("x2", "bilanz2", B)
 
@@ -568,6 +615,11 @@ p1.addObjPart("fun2", "jac2", "hess2", ["x1","v"], ['s1',5])
 p1.addObjPart("fun3", "jac3", "hess4", ["x1","v"], ['s1','s1'])
 p1.addObjPart("fun4", "jac4", "hess5", ["x1","v"], ['s1','s1'])
 
+p1.addCost('x1', np.ones(10))
+p1.createLinearCost()
+
+p1.addIntegrality('v', np.ones(3))
+p1.createIntegrality()
 
 p1.createNonlinFunctions("funs", "funs2","params")
 
