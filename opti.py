@@ -5,7 +5,7 @@ Created on Mon Feb 24 20:32:00 2025
 @author: Michael
 """
 import numpy as np
-from scipy.sparse import  csr_matrix, lil_matrix
+from scipy.sparse import  csr_matrix, lil_matrix, vstack
 
 class Opt:
     def __init__(self):   
@@ -117,7 +117,6 @@ class Opt:
             
             self.matrix[cStart:cEnd, vStart:vEnd]=mat
     
-        self.matrix=csr_matrix(self.matrix)
         
     def setLinBound(self, constr_name, lower, upper):
         if constr_name not in self.linear_constraint_name:
@@ -134,8 +133,8 @@ class Opt:
         self.lin_bound_blocks.append([constr_name,lower,upper])
         
     def createLinBounds(self):
-        self.lin_upper=np.zeros(self.ind_linear_constraint[-1])
-        self.lin_lower=np.zeros(self.ind_linear_constraint[-1])
+        self.lin_upper=np.inf*np.ones(self.ind_linear_constraint[-1])
+        self.lin_lower=-np.inf*np.ones(self.ind_linear_constraint[-1])
         
         for block in self.lin_bound_blocks:
             constr_name=block[0]
@@ -162,8 +161,8 @@ class Opt:
         self.bound_blocks.append([var_name,lower,upper])        
         
     def createBounds(self):
-        self.upper=np.zeros(self.ind_var[-1])
-        self.lower=np.zeros(self.ind_var[-1])
+        self.upper=np.inf*np.ones(self.ind_var[-1])
+        self.lower=-np.inf*np.ones(self.ind_var[-1])
         
         for block in self.bound_blocks:
             var_name=block[0]
@@ -201,8 +200,8 @@ class Opt:
         self.nonlin_bound_blocks.append([constr_name,lower,upper])
 
     def createNonlinBounds(self):
-        self.nonlin_upper=np.zeros(self.ind_nonlinear_constraint[-1])
-        self.nonlin_lower=np.zeros(self.ind_nonlinear_constraint[-1])
+        self.nonlin_upper=np.inf*np.ones(self.ind_nonlinear_constraint[-1])
+        self.nonlin_lower=-np.inf*np.ones(self.ind_nonlinear_constraint[-1])
         
         for block in self.nonlin_bound_blocks:
             constr_name=block[0]
@@ -570,12 +569,37 @@ class Opt:
         self.createMatrix()
         self.createNonlinBounds()
         
-        return self.lower, self.upper, self.matrix, self.lin_lower, self.lin_upper, self.nonlin_lower, self.nonlin_upper
-        
-     
+        return self.lower, self.upper, csr_matrix(self.matrix), self.lin_lower, self.lin_upper, self.nonlin_lower, self.nonlin_upper
     
-
-
+     
+    def createLinprog(self):
+        self.createBounds()
+        self.createLinBounds()
+        self.createMatrix()
+        self.createIntegrality()
+        self.createLinearCost()
+        
+        indicesEq=self.lin_lower==self.lin_upper
+        indicesUb=not(indicesEq)
+        
+        AEq=self.matrix[indicesEq,:]
+        bEq=self.lin_upper[indicesEq]
+        
+        inidcesUb=indicesUb and (self.lin_upper!=np.inf)
+        AUb=self.matrix[indicesUb,:]
+        bUb=self.upper[indicesUb]
+        
+        indicesLb=indicesUb and (self.lin_lower!=-np.inf)
+        ALb=self.matrix[indicesLb,:]
+        bLb=self.lin_lower[indicesLb]
+        
+        AUbfull=vstack([AUb,-ALb])
+        bUbfull=np.hstack((bUb,-bLb))
+        
+        return self.cost, self.lower, self.upper, csr_matrix(AEq), bEq, csr_matrix(AUbfull), bUbfull, self.integrality
+        
+        
+        
 p1=Opt()
 
 
