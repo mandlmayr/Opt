@@ -124,11 +124,6 @@ class Opt:
             
         indC=self.linear_constraint_name.index(constr_name)
         size=self.linear_constraint_size[indC]
-        if len(lower)!=size:
-            raise Exception("Lower dimension not correct!!!")
-            
-        if len(upper)!=size:
-            raise Exception("Upper dimension not correct!!!")
             
         self.lin_bound_blocks.append([constr_name,lower,upper])
         
@@ -152,11 +147,6 @@ class Opt:
             
         indV=self.variable_name.index(var_name)
         size=self.variable_size[indV]
-        if len(lower)!=size:
-            raise Exception("Lower dimension not correct!!!")
-            
-        if len(upper)!=size:
-            raise Exception("Upper dimension not correct!!!")
             
         self.bound_blocks.append([var_name,lower,upper])        
         
@@ -191,11 +181,6 @@ class Opt:
             
         indC=self.nonlinear_constraint_name.index(constr_name)
         size=self.nonlinear_constraint_size[indC]
-        if len(lower)!=size:
-            raise Exception("Lower dimension not correct!!!")
-            
-        if len(upper)!=size:
-            raise Exception("Upper dimension not correct!!!")
             
         self.nonlin_bound_blocks.append([constr_name,lower,upper])
 
@@ -470,7 +455,6 @@ class Opt:
                     
                     string+=space+"hess["+str(vStart)+":"+str(vEnd)+"," +str(v2Start)+":"+str(v2End)+"]+="+"d"+var+var2+"_"+func+linebreak
             string+=linebreak
-        string+=linebreak
         string+=space+"return csr_matrix(hess)"
                     
         string+=linebreak+linebreak
@@ -528,8 +512,6 @@ class Opt:
             raise Exception("Variable does not exist!!!")            
         indV=self.variable_name.index(var_name)
         size=self.variable_size[indV]
-        if len(integrality)!=size:
-            raise Exception("Integrality dimension not correct!!!")
             
             
         self.integrality_block.append([var_name,integrality])   
@@ -580,16 +562,16 @@ class Opt:
         self.createLinearCost()
         
         indicesEq=self.lin_lower==self.lin_upper
-        indicesUb=not(indicesEq)
+        indicesNeq=not(indicesEq)
         
         AEq=self.matrix[indicesEq,:]
         bEq=self.lin_upper[indicesEq]
         
-        inidcesUb=indicesUb and (self.lin_upper!=np.inf)
+        indicesUb=indicesNeq and (self.lin_upper!=np.inf)
         AUb=self.matrix[indicesUb,:]
         bUb=self.upper[indicesUb]
         
-        indicesLb=indicesUb and (self.lin_lower!=-np.inf)
+        indicesLb=indicesNeq and (self.lin_lower!=-np.inf)
         ALb=self.matrix[indicesLb,:]
         bLb=self.lin_lower[indicesLb]
         

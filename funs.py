@@ -101,7 +101,6 @@ def hessP(x ,s1 ,s2):
     hess[25:28,0:10]+=dvx1_fun4
     hess[25:28,25:28]+=dvv_fun4
 
-
     return csr_matrix(hess)
 
 def constr(x):
