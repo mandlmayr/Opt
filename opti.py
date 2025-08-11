@@ -93,14 +93,6 @@ class Opt:
         sizeV=self.variable_size[indV]
         sizeC=self.linear_constraint_size[indC]
             
-        matC=matrix.shape[0]
-        matV=matrix.shape[1]
-        
-        if matV != sizeV :
-            raise Exception("Variable dimension is wrong!")
-            
-        if matC != sizeC :
-            raise Exception("Constraint dimension is wrong!")
             
         self.matrix_blocks.append([constr_name,var_name,matrix])
         
@@ -501,8 +493,6 @@ class Opt:
             raise Exception("Variable does not exist!!!")            
         indV=self.variable_name.index(var_name)
         size=self.variable_size[indV]
-        if len(cost)!=size:
-            raise Exception("Cost dimension not correct!!!")
             
             
         self.cost_block.append([var_name,cost])        
@@ -562,23 +552,24 @@ class Opt:
         self.createLinearCost()
         
         indicesEq=self.lin_lower==self.lin_upper
-        indicesNeq=not(indicesEq)
-        
+        indicesNeq=np.logical_not(indicesEq)
+
         AEq=self.matrix[indicesEq,:]
         bEq=self.lin_upper[indicesEq]
         
-        indicesUb=indicesNeq and (self.lin_upper!=np.inf)
+        indicesUb=np.logical_and(indicesNeq, (self.lin_upper!=np.inf))
         AUb=self.matrix[indicesUb,:]
-        bUb=self.upper[indicesUb]
+        bUb=self.lin_upper[indicesUb]
         
-        indicesLb=indicesNeq and (self.lin_lower!=-np.inf)
+        indicesLb=np.logical_and(indicesNeq , (self.lin_lower!=-np.inf))
         ALb=self.matrix[indicesLb,:]
         bLb=self.lin_lower[indicesLb]
         
         AUbfull=vstack([AUb,-ALb])
         bUbfull=np.hstack((bUb,-bLb))
-        
-        return self.cost, self.lower, self.upper, csr_matrix(AEq), bEq, csr_matrix(AUbfull), bUbfull, self.integrality
+        bounds = [(low, high) for low, high in zip(self.lower, self.upper)]
+
+        return self.cost, bounds, csr_matrix(AEq), bEq, csr_matrix(AUbfull), bUbfull, self.integrality
         
         
         
