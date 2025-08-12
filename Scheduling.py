@@ -4,11 +4,13 @@ Created on Mon Aug 11 00:50:40 2025
 
 @author: Michael
 """
+import os
+os.environ["OMP_NUM_THREADS"] = "20"  # use 4 threads
 from opti import Opt
 import numpy as np
 import scipy as sp
 
-M=10000
+M=100
 class Factory:
     def __init__(self):
         self.plants=[]
@@ -64,7 +66,7 @@ class Scheduling:
                     p.setLinBound(selfInt, -np.inf, -self.Schedule[i].assignments[j-1])
                     
                 
-            for l in range(i):
+            for l in range(0, i ):
                 for j in range(len(self.factory.plants)):
                     overlap=f'Overlap_{i,j,l}'
                     slj=f's_{l,j}'
@@ -88,7 +90,7 @@ class Scheduling:
                     
         p.addVar("C",1)
         
-        for i in range(len(self.Schedule)):
+        for i in range(0,len(self.Schedule)):
             last_plant=len(self.factory.plants)-1
             
             cost=f'c_{i}'
@@ -100,8 +102,57 @@ class Scheduling:
             
         p.addCost("C", 1)
         p.setupIndices()
-        return p
+        
+        self.p=p
+        
+    def optimize(self):
+        self.createProblem()
+        cost, bounds , Aeq, beq, Aub, bub, integrality=self.p.createLinprog()
+        
+        highs_options = {
+            'time_limit': 50,
+            'disp':True,
+            'presolve':True
+         }
+        
+        res=sp.optimize.linprog(cost, A_ub=Aub, b_ub=bub, A_eq=Aeq, b_eq=beq, bounds=bounds,options=highs_options, method='highs' ,callback=None, integrality=integrality)
+        self.result=res.x
+    
+    def getSchedule(self,i):
+        s=[]
+        x=[]
+        for j in range(len(self.factory.plants)):
+            sj=self.p.extractVar(f's_{i,j}', self.result)
             
+            xj=self.p.extractVar(f'x_{i,j}', self.result)
+            
+            print(self.factory.plants[j][0],sj)
+            s.append(sj)
+            x.append(xj)
+        return s,x
+    
+    def printGantt(self):
+        product_assignments=[]
+        for k in range(len(self.Schedule)):
+            product=self.Schedule[k]
+            name=product.name
+            s,x= self.getSchedule(k)
+            
+            for j in range(len(self.factory.plants)):
+                sj=s[j]
+                xj=x[j]
+                machine=self.factory.plants[j]
+                number=np.where(xj == 1)[0][0]
+                duration=product.assignments[j]
+                
+                product_assignments.append({
+                                               "plant": machine+str(number),
+                                               "start": sj,
+                                               "duration": duration
+                                           })
+            
+        return product_assignments
+        
 hospital=Factory()
 hospital.addPlant('MRT',2)
 hospital.addPlant('Consultation',3)
@@ -116,17 +167,45 @@ Terminplan.addProduct(checkup)
 Terminplan.addProduct(checkup)
 Terminplan.addProduct(checkup)
 Terminplan.addProduct(consultation)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(consultation)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(consultation)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(consultation)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(consultation)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(checkup)
 Terminplan.addProduct(consultation)
 Terminplan.addProduct(consultation)
 Terminplan.addProduct(checkup)
 Terminplan.addProduct(checkup)
 Terminplan.addProduct(checkup)
 Terminplan.addProduct(checkup)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(consultation)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(consultation)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(consultation)
 
+Terminplan.optimize()
 
-p= Terminplan.createProblem()
-
-cost, bounds , Aeq, beq, Aub, bub, integrality=p.createLinprog()
-
-
-res=sp.optimize.linprog(cost, A_ub=Aub, b_ub=bub, A_eq=Aeq, b_eq=beq, bounds=bounds, method='highs', callback=None, options=None, x0=None, integrality=integrality)
+Terminplan.getSchedule(5)
+a=Terminplan.printGantt()

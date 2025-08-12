@@ -72,10 +72,15 @@ class Opt:
     def indexVar(self,var_name):
         ind=self.variable_name.index(var_name)
         return self.ind_var[ind], self.ind_var[ind+1]
+    
+    def extractVar(self, var_name,x):
+        start, end =self.indexVar(var_name)
+        return x[start:end]
         
     def indexLinConstr(self, constr_name):
         ind=self.linear_constraint_name.index(constr_name)
         return self.ind_linear_constraint[ind], self.ind_linear_constraint[ind+1]
+    
     
     def indexNonlinConstr(self, constr_name):
         ind=self.nonlinear_constraint_name.index(constr_name)
