@@ -9,8 +9,9 @@ os.environ["OMP_NUM_THREADS"] = "20"  # use 4 threads
 from opti import Opt
 import numpy as np
 import scipy as sp
+import matplotlib.pyplot as plt
 
-M=100
+M=1000
 class Factory:
     def __init__(self):
         self.plants=[]
@@ -110,7 +111,7 @@ class Scheduling:
         cost, bounds , Aeq, beq, Aub, bub, integrality=self.p.createLinprog()
         
         highs_options = {
-            'time_limit': 50,
+            'time_limit': 10,
             'disp':True,
             'presolve':True
          }
@@ -132,32 +133,72 @@ class Scheduling:
         return s,x
     
     def printGantt(self):
-        product_assignments=[]
+        data=[]
         for k in range(len(self.Schedule)):
             product=self.Schedule[k]
             name=product.name
             s,x= self.getSchedule(k)
             
             for j in range(len(self.factory.plants)):
-                sj=s[j]
+                sj=s[j][0]
                 xj=x[j]
-                machine=self.factory.plants[j]
-                number=np.where(xj == 1)[0][0]
+                machine=self.factory.plants[j][0]
+                number=np.where(xj >= 0.9)[0][0]
                 duration=product.assignments[j]
                 
-                product_assignments.append({
-                                               "plant": machine+str(number),
+                
+                data.append({                  "ProductName": name,
+                                               "ProductIndex" : k,
+                                               "plant": machine,
+                                               "PlantIndex": number,
                                                "start": sj,
                                                "duration": duration
                                            })
             
-        return product_assignments
+
+        # Unique plants (machines) for Y-axis
+        plants = sorted(set(f"{d['plant']}{d['PlantIndex']}" for d in data))
+        plant_to_y = {p: i for i, p in enumerate(plants)} 
+
+        # Unique products for colors
+        products = sorted(set(f"{d['ProductName']}_{d['ProductIndex']}" for d in data))
+        colors = plt.cm.get_cmap('tab20', len(products))
+        product_to_color = {prod: colors(i) for i, prod in enumerate(products)}
+
+        fig, ax = plt.subplots(figsize=(12, 6))
+
+        for d in data:
+            plant_label = f"{d['plant']}{d['PlantIndex']}"
+            y = plant_to_y[plant_label]
+            product_label = f"{d['ProductName']}_{d['ProductIndex']}"
+            start = d['start']
+            duration = d['duration']
+
+            ax.barh(y=y, width=duration, left=start, height=0.8, color=product_to_color[product_label], edgecolor='black')
+
+        # Y-axis ticks and labels
+        ax.set_yticks(list(plant_to_y.values()))
+        ax.set_yticklabels(list(plant_to_y.keys()))
+
+        ax.set_xlabel('Time')
+        ax.set_title('Gantt Chart: Product Scheduling on Machines')
+
+        # Create legend for products
+        handles = [plt.Rectangle((0,0),1,1, color=product_to_color[prod]) for prod in products]
+        ax.legend(handles, products, title="Products")
+
+        plt.tight_layout()
+        plt.show()
+
         
 hospital=Factory()
 hospital.addPlant('MRT',2)
 hospital.addPlant('Consultation',3)
-consultation=Product("consult",hospital,[10,5])
-checkup=Product("check",hospital,[3,7])
+hospital.addPlant('BloodTesting',2)
+hospital.addPlant('release', 2)
+
+consultation=Product("consult",hospital,[10,5,0,1])
+checkup=Product("check",hospital,[3,7,20,1])
 
 Terminplan=Scheduling(hospital)
 Terminplan.addProduct(consultation)
@@ -170,25 +211,8 @@ Terminplan.addProduct(consultation)
 Terminplan.addProduct(checkup)
 Terminplan.addProduct(checkup)
 Terminplan.addProduct(checkup)
-Terminplan.addProduct(consultation)
 Terminplan.addProduct(checkup)
 Terminplan.addProduct(checkup)
-Terminplan.addProduct(checkup)
-Terminplan.addProduct(consultation)
-Terminplan.addProduct(checkup)
-Terminplan.addProduct(checkup)
-Terminplan.addProduct(checkup)
-Terminplan.addProduct(checkup)
-Terminplan.addProduct(checkup)
-Terminplan.addProduct(consultation)
-Terminplan.addProduct(checkup)
-Terminplan.addProduct(checkup)
-Terminplan.addProduct(checkup)
-Terminplan.addProduct(consultation)
-Terminplan.addProduct(checkup)
-Terminplan.addProduct(checkup)
-Terminplan.addProduct(checkup)
-Terminplan.addProduct(consultation)
 Terminplan.addProduct(consultation)
 Terminplan.addProduct(checkup)
 Terminplan.addProduct(checkup)
@@ -199,11 +223,6 @@ Terminplan.addProduct(consultation)
 Terminplan.addProduct(checkup)
 Terminplan.addProduct(checkup)
 Terminplan.addProduct(checkup)
-Terminplan.addProduct(consultation)
-Terminplan.addProduct(checkup)
-Terminplan.addProduct(checkup)
-Terminplan.addProduct(checkup)
-Terminplan.addProduct(consultation)
 
 Terminplan.optimize()
 
