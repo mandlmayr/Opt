@@ -11,7 +11,7 @@ import numpy as np
 import scipy as sp
 import matplotlib.pyplot as plt
 
-M=1000
+M=10000
 class Factory:
     def __init__(self):
         self.plants=[]
@@ -55,13 +55,16 @@ class Scheduling:
                 one=f'one_{i,j}'       
                 p.addLinConstr(one, 1)
                 p.setSubMatrix(x, one, np.ones((1,size)))
-                p.setLinBound(one, 1, 1)
+                if self.Schedule[i].assignments[k]==0:
+                    p.setLinBound(one, 0, 0)
+                else:
+                    p.setLinBound(one, 1, 1)
                 
                 if j>0:
-                    selfInt=f'self_{i}'
+                    selfInt=f'self_{i,j}'
                     p.addLinConstr(selfInt, 1)
                     p.setSubMatrix(s, selfInt, -1)
-                    
+    
                     p.setSubMatrix(s_old, selfInt, 1)
                     
                     p.setLinBound(selfInt, -np.inf, -self.Schedule[i].assignments[j-1])
@@ -106,12 +109,12 @@ class Scheduling:
         
         self.p=p
         
-    def optimize(self):
+    def optimize(self,time=10):
         self.createProblem()
         cost, bounds , Aeq, beq, Aub, bub, integrality=self.p.createLinprog()
         
         highs_options = {
-            'time_limit': 10,
+            'time_limit': time,
             'disp':True,
             'presolve':True
          }
@@ -127,7 +130,6 @@ class Scheduling:
             
             xj=self.p.extractVar(f'x_{i,j}', self.result)
             
-            print(self.factory.plants[j][0],sj)
             s.append(sj)
             x.append(xj)
         return s,x
@@ -157,12 +159,18 @@ class Scheduling:
             
 
         # Unique plants (machines) for Y-axis
-        plants = sorted(set(f"{d['plant']}{d['PlantIndex']}" for d in data))
+        
+        plants=[]
+        for plant in self.factory.plants:
+            for k in range(plant[1]):
+                plants.append(plant[0]+str(k))               
+        plants.reverse()
+        
         plant_to_y = {p: i for i, p in enumerate(plants)} 
 
         # Unique products for colors
         products = sorted(set(f"{d['ProductName']}_{d['ProductIndex']}" for d in data))
-        colors = plt.cm.get_cmap('tab20', len(products))
+        colors = plt.cm.get_cmap('tab10', len(products))
         product_to_color = {prod: colors(i) for i, prod in enumerate(products)}
 
         fig, ax = plt.subplots(figsize=(12, 6))
@@ -185,11 +193,10 @@ class Scheduling:
 
         # Create legend for products
         handles = [plt.Rectangle((0,0),1,1, color=product_to_color[prod]) for prod in products]
-        ax.legend(handles, products, title="Products")
 
-        plt.tight_layout()
+
         plt.show()
-
+        return data
         
 hospital=Factory()
 hospital.addPlant('MRT',2)
@@ -197,22 +204,17 @@ hospital.addPlant('Consultation',3)
 hospital.addPlant('BloodTesting',2)
 hospital.addPlant('release', 2)
 
-consultation=Product("consult",hospital,[10,5,0,1])
-checkup=Product("check",hospital,[3,7,20,1])
+consultation=Product("consult",hospital,[20,5,0,1])
+checkup=Product("check",hospital,[0,7,20,1])
 
 Terminplan=Scheduling(hospital)
+
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(checkup)
 Terminplan.addProduct(consultation)
-Terminplan.addProduct(consultation)
-Terminplan.addProduct(checkup)
-Terminplan.addProduct(checkup)
-Terminplan.addProduct(checkup)
-Terminplan.addProduct(checkup)
-Terminplan.addProduct(consultation)
-Terminplan.addProduct(checkup)
-Terminplan.addProduct(checkup)
-Terminplan.addProduct(checkup)
-Terminplan.addProduct(checkup)
-Terminplan.addProduct(checkup)
 Terminplan.addProduct(consultation)
 Terminplan.addProduct(checkup)
 Terminplan.addProduct(checkup)
@@ -220,11 +222,125 @@ Terminplan.addProduct(checkup)
 Terminplan.addProduct(checkup)
 Terminplan.addProduct(checkup)
 Terminplan.addProduct(consultation)
+Terminplan.addProduct(consultation)
 Terminplan.addProduct(checkup)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(consultation)
+Terminplan.addProduct(consultation)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(consultation)
+Terminplan.addProduct(consultation)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(consultation)
+Terminplan.addProduct(consultation)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(consultation)
+Terminplan.addProduct(consultation)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(consultation)
+Terminplan.addProduct(consultation)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(consultation)
+Terminplan.addProduct(consultation)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(consultation)
+Terminplan.addProduct(consultation)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(consultation)
+Terminplan.addProduct(consultation)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(consultation)
+Terminplan.addProduct(consultation)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(consultation)
+Terminplan.addProduct(consultation)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(consultation)
+Terminplan.addProduct(consultation)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(consultation)
+Terminplan.addProduct(consultation)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(consultation)
+Terminplan.addProduct(consultation)
 Terminplan.addProduct(checkup)
 Terminplan.addProduct(checkup)
 
-Terminplan.optimize()
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(consultation)
+Terminplan.addProduct(consultation)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(consultation)
+Terminplan.addProduct(consultation)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(consultation)
+Terminplan.addProduct(consultation)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(consultation)
+Terminplan.addProduct(consultation)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(consultation)
+Terminplan.addProduct(consultation)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(consultation)
+Terminplan.addProduct(consultation)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(consultation)
+Terminplan.addProduct(consultation)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(consultation)
+Terminplan.addProduct(consultation)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(checkup)
+Terminplan.addProduct(consultation)
+Terminplan.addProduct(consultation)
+Terminplan.addProduct(checkup)
+Terminplan.optimize(1000)
 
-Terminplan.getSchedule(5)
 a=Terminplan.printGantt()
